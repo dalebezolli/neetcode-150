@@ -46,3 +46,78 @@ function containsDuplicateHashSet(nums: number[]): boolean {
 
 	return false;
 }
+
+// 242. Valid Anagram
+// https://leetcode.com/problems/valid-anagram/description/
+//
+// Q:
+// given two strings identify if they're an anagram of eachother.
+//
+// Breakdown:
+// An anagram of a word is another word that contains the exact number of letters but in a different ordering.
+//
+// Constraints:
+// lowercase a-z characters (26 in total)
+//
+// A:
+// > Count Array
+// If we know the count of all the characters in both arrays we can compare them and if they match we'll be looking at anagrams.
+// This means that we need to create an array that will contain the count of each lowercase character.
+// To store them efficiently we'll map each lowercase character to an index in the array starting from a mapped to 0.
+// This will be done using a mapping function that runs asciiCode(character) - 97.
+//
+// The two arrays need to run through n characters and check if they're the same. This means we'll run through n and m indices
+// and then through 26 indices making our runtime O(n + m).
+// The space complexity is a constant, meaning O(1).
+//
+// > HashMap
+// If we didn't have the character constraint we'd have to update the mapping with something better, that would be a hashmap!
+// This means that we'd swap the array to maps.
+//
+// Although this keep our runtime to O(n + m) it worsens the space complexity to O(n + m).
+
+function isAnagramCountArray(s: string, t: string): boolean {
+	let arrS = new Array(26).fill(0);
+	let arrT = new Array(26).fill(0);
+
+	for(let charS of s) {
+		arrS[charS.charCodeAt(0) - 97]++;
+	}
+
+	for(let charT of t) {
+		arrT[charT.charCodeAt(0) - 97]++;
+	}
+
+	for(let i = 0; i < 26; i++) {
+		if(arrS[i] !== arrT[i]) return false;
+	}
+
+	return true;
+};
+
+function isAnagramHashMap(s: string, t: string): boolean {
+	let mapS = new Map();
+	let mapT = new Map();
+
+	for(let charS of s) {
+		mapS.set(charS, (mapS.get(charS) ?? 0) + 1);
+	}
+
+	for(let charT of t) {
+		mapT.set(charT, (mapT.get(charT) ?? 0) + 1);
+	}
+
+	// Unfortunately in this case we cannot just look at one of the maps and check it against the other because:
+	// - if there exist more characters in the other we won't know it
+	// - if there exists the same count of characters even if
+	//   they're different there could be a chance that the intersection has the same count thus giving us a false positive.
+	for(let [charS, countCharS] of mapS) {
+		if(mapT.get(charS) !== countCharS) return false;
+	}
+
+	for(let [charT, countCharT] of mapT) {
+		if(mapS.get(charT) !== countCharT) return false;
+	}
+
+	return true;
+};
