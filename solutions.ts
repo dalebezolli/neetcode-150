@@ -121,3 +121,54 @@ function isAnagramHashMap(s: string, t: string): boolean {
 
 	return true;
 };
+
+// 1. Two Sum
+// https://leetcode.com/problems/two-sum/description/
+//
+// Q:
+// Given an array of integers (nums) and an integer (target) return two indices that add up to the target.
+//
+// A:
+// > Brute Force
+// In theory the way we're going to make sure we have two numbers equaling to a total would be to just add them up and see... right?
+// We can go on every number in the array and add it with aaaaaaaaaaaaaaaaall other numbers, every time checking if it's the same as the target.
+//
+// I'm assuming it's slef explanatory that if we're in the i'th index, we don't need to add the number with every previous number and itself... as:
+// - adding the previous numbers would be redundant
+// - adding itself would cause inaccuracies
+//
+// As we're checking every number with every other that means n*n = n^2 = O(n^2)
+// We're not creating any extra data proportional to our input thus we have a static space complexity O(1)
+//
+// > Hashing
+// Something interesting about numbers is the fact that if we subtract the target with a number, we will know what number we're missing.
+// The only thing we'd need to make our algorithm faster would be to somehow know exactly where the numbers in the array are stored.
+// The best way to achieve this would be to store our numbers in a hashmap, then in every index we'll find the missing number and verify if it exists.
+//
+// We need to create a map "O(n)" which then we'll use to loop through our array "O(n)" making our time complexity O(n)
+// The space complexity though takes a toll because of the map making it O(n).
+
+function twoSumBruteForce(nums: number[], target: number): number[] {
+	for(let i = 0; i < nums.length - 1; i++) {
+		for(let j = i + 1; j < nums.length; j++) {
+			if(nums[i] + nums[j] === target) return [i, j];
+		}
+	}
+
+	return [-1, -1];
+};
+
+function twoSumHashing(nums: number[], target: number): number[] {
+	let mappedNums = new Map();
+
+	for(let i = 0; i < nums.length; i++) {
+		let expectedNum = target - nums[i];
+		if(mappedNums.has(expectedNum)) {
+			return [mappedNums.get(expectedNum), i];
+		}
+
+		mappedNums.set(nums[i], i);
+	}
+
+	return [-1, -1];
+};
