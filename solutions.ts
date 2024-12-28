@@ -172,3 +172,110 @@ function twoSumHashing(nums: number[], target: number): number[] {
 
 	return [-1, -1];
 };
+
+// 49. Group Anagrams
+// https://leetcode.com/problems/group-anagrams/description/
+//
+// Q:
+// Find all the similar anagrams in an array and group them.
+//
+// Constraints:
+// each word contains only lowercase characters a-z.
+//
+// Breakdown:
+// We first need to break down the problem to two parts:
+// - what are anagrams?
+// - how can we find similar anagrams?
+//
+// A word, mathematically, is an anagram of another when it has the exact same frequencies per character with the other.
+// This means that to find if a word is an anagram of another we can just count the frequencies of each character and compare them with another.
+//
+// In it's core we'll have a function that converts a string into an array of character frequencies. It will work by mapping each character in an index from
+// 0 to 25 with a -> 0, b -> 1, ...
+// This is possible by subtracting the ascii code with 97.
+//
+// A:
+// > Brute Force
+// We can check the current word with all the first words in the array of anagrams. If it matches with a word, we add it in that array, 
+// otherwise we add it to the end of the list.
+//
+// The conversion to a frequency array takes O(n), we then need to check each frequency with the rest of the frequencies.
+// This means n*m iterrations where n is the length of the string and m the total count of strings. Thus O(n*m) time complexity.
+//
+// If we consider the result array in the space complexity we'd have O(m), otherwise we'd have O(1).
+//
+// > Hashing
+// We can convert the frequency array into a key for a map. This will help us to find identical anagrams in O(1). This will improve in both the
+// conversions to frequency arrays as we won't need to do it every time significantly improving the total time as well as the time complexity to O(m).
+//
+// The space complexity remains as O(m) regardless if we consider the resulting array in it as we now need a map.
+
+function groupAnagramsBruteForce(strs: string[]): string[][] {
+	let result: string[][] = [];
+
+	for(const str of strs) {
+		let currFreq = calculateFreqArray(str);
+
+		let found = false;
+		for(let anagramGroup of result) {
+			let anagramGroupFreq = calculateFreqArray(anagramGroup[0]);
+			if(isFreqEqual(currFreq, anagramGroupFreq)) {
+				found = true;
+				anagramGroup.push(str);
+			}
+		}
+
+		if(!found) {
+			result.push([str]);
+		}
+	}
+
+	return result;
+
+	function isFreqEqual(aFreq: number[], bFreq: number[]) {
+		for(let i = 0; i < 26; i++) {
+			if(aFreq[i] !== bFreq[i]) return false;
+		}
+
+		return true;
+	}
+
+	function calculateFreqArray(str: string): number[] {
+		let freq = new Array(26).fill(0);
+
+		for(let char of str) {
+			freq[char.charCodeAt(0) - 97]++;
+		}
+
+		return freq;
+	}
+};
+
+function groupAnagramsHashing(strs: string[]): string[][] {
+	let mapAnagrams: Map<string, string[]> = new Map();
+
+	for(const str of strs) {
+		const strAnagram = calculateFreqArray(str);
+		const strAnagramKey = strAnagram.join(';');
+
+		let groupAnagrams = mapAnagrams.get(strAnagramKey);
+
+		if(groupAnagrams) {
+			groupAnagrams.push(str);
+		} else {
+			mapAnagrams.set(strAnagramKey, [str]);
+		}
+	}
+
+	return Array.from(mapAnagrams.values());
+
+	function calculateFreqArray(str: string): number[] {
+		let freq = new Array(26).fill(0);
+
+		for(let char of str) {
+			freq[char.charCodeAt(0) - 97]++;
+		}
+
+		return freq;
+	}
+};
