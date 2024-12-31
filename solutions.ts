@@ -279,3 +279,141 @@ function groupAnagramsHashing(strs: string[]): string[][] {
 		return freq;
 	}
 };
+
+// 347. Top K Frequent Elements
+// https://leetcode.com/problems/top-k-frequent-elements/description/
+//
+// Q:
+// Given an array of integers, return the top k most frequent.
+//
+// A:
+// > NlogNStableSort
+//
+// As the number of frequent elements is variable, we should ideally write a general algorithm which would find the appropriate solution.
+// For this we could write a simple sorting algorithm that sorts based on the occurance count of each number. For this to be possible we need to count the occurances for each number,
+// that can best be done using a map.
+//
+// Once we have the map we'll convert it into an array of tuples which will hold as the first value the number and the second will be it's frequency. With it we'll write a custom merge
+// sort.
+//
+// The time complexity to count occurances is O(n) using a map, then to convert to an array it will take O(n) time and for us to merge sort we'll need O(nlogn) making our algorithm have a
+// final time complexity of O(nlogn).
+//
+// The space complexity in every step is always proportional to the input making it O(n).
+//
+// > Histogram
+//
+// One idea that lowers the complexity would be to constantly rank the numbers based on their occurances, sort of like creating a histogram we'll rank all numbers.
+// The best example of what that would look is the following:
+//
+// Example array: [1, 3, 2, 1, 1, 2]
+// Historgram representation:
+//
+// x
+// x x
+// x x x
+// -----
+// 1 2 3
+//
+// We can practically think of each slice of the histogram as an array, and the entire histogram as an array of slices, which means that we can represent this using a 2d dynamic array.
+// While we loop though our data we'll insert each occurance of a number in the appropriate level/slice. But we need to somehow know where to insert the data at (i.e. know how many occurances we have).
+// This means we also need a map to keep track of our occurance count for each number.
+//
+// Once we finish, we just need to go backwards from the first element until we find the k most frequent.
+//
+// This algorithm will run once through all our data, and k through the data we created making it practically a O(n+k) algorithm.
+// Althgouh if we consider the worst case we'll find that we want ALL the numbers of the array making it an O(2n) = O(n).
+// We'll be creating one array to store our numbers O(n) and another to keep track of the frequency of occurances O(n). I'd consider it a worst case of O(2n) = O(n).
+
+function topKFrequentNlogNStableSort(nums: number[], k: number): number[] {
+	type numberfreq = [number, number];
+	let frequencyMap = new Map();
+
+	for(const num of nums) {
+		frequencyMap.set(num, (frequencyMap.get(num) ?? 0) + 1);
+	}
+
+	let numWithFrequencies: numberfreq[] = Array.from(frequencyMap);
+	console.log('Before sort:', numWithFrequencies);
+	freqMergeSort(numWithFrequencies, 0, numWithFrequencies.length - 1);
+	console.log('After sort:', numWithFrequencies);
+
+	let result: number[] = [];
+
+	for(let i = 0; i < k; i++) {
+		result.push(numWithFrequencies[numWithFrequencies.length - 1 - i][0]);
+	}
+
+	return result;
+
+	function freqMergeSort(array: numberfreq[], left: number, right: number) {
+		if(left >= right) return;
+
+		const mid = left + Math.floor((right - left) / 2);
+		freqMergeSort(array, left, mid);
+		freqMergeSort(array, mid + 1, right);
+
+		let leftArr: numberfreq[] = [];
+		let rightArr: numberfreq[] = [];
+
+		for(let i = left; i <= mid; i++) {
+			leftArr[i - left] = array[i];
+		}
+
+		for(let i = mid + 1; i <= right; i++) {
+			rightArr[i - (mid + 1)] = array[i];
+		}
+
+		console.log(`Left: ${left} Right: ${right} Mid: ${mid}`);
+		console.log(`LeftArr: ${JSON.stringify(leftArr)} RightArr: ${JSON.stringify(rightArr)}`);
+
+		let pos = left;
+		let leftPos = 0;
+		let rightPos = 0;
+		while(leftPos < leftArr.length && rightPos < rightArr.length) {
+			if(leftArr[leftPos][1] < rightArr[rightPos][1]) {
+				array[pos++] = leftArr[leftPos++];
+			} else {
+				array[pos++] = rightArr[rightPos++];
+			}
+		}
+
+		while(leftPos < leftArr.length) {
+			array[pos++] = leftArr[leftPos++];
+		}
+
+		while(rightPos < rightArr.length) {
+			array[pos++] = rightArr[rightPos++];
+		}
+	}
+}
+
+function topKFrequentHistogram(nums: number[], k: number): number[] {
+	let frequencyNums = new Map<number, number>();
+	let histogram: number[][] = [];
+
+	for(const num of nums) {
+		frequencyNums.set(num, (frequencyNums.get(num) ?? 0) + 1);
+		if(histogram.length < frequencyNums.get(num)!) {
+			histogram.push([]);
+		}
+
+		histogram[frequencyNums.get(num)! - 1].push(num);
+	}
+
+	let results = new Set<number>();
+	let currHeight = histogram.length - 1;
+	let currIndex = 0;
+	while(currHeight >= 0 && results.size < k) {
+		if(currIndex >= histogram[currHeight].length) {
+			currHeight--;
+			currIndex = 0;
+			continue;
+		}
+
+		results.add(histogram[currHeight][currIndex]);
+		currIndex++;
+	}
+
+	return Array.from(results);
+}
