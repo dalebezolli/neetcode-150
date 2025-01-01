@@ -417,3 +417,185 @@ function topKFrequentHistogram(nums: number[], k: number): number[] {
 
 	return Array.from(results);
 }
+
+// 271. Encode and Decode Strings
+// https://leetcode.com/problems/encode-and-decode-strings
+//
+// Q:
+// Given an input array of strings encode it and return the encoded string. Then given the encoded string we must be able to decode it back to the original structure.
+//
+// A:
+// > Naive
+// Encode function
+// We can use a character as a delimter with it we can easily join all the strings without worrying too much.
+// A good delimiter would be something that the user shoudn't have access to from the keyboard, potentially a non ascii character like a nbsp.
+//
+// The time complexity for this algorithm is O(m) where m is the number of strings in the array while the space complexity if we don't consider the output is O(1).
+//
+// Decode function
+// We can then take the delimiter and use it to find each word, with it we can split all the strings again and return the array.
+//
+// The time complexity is O(n) where n is the number of characters in the encode string (which is proportional to the character count of all the input strings) and the space complexity O(1).
+//
+// > Length Encoded
+// To remove the restriction of not being able to use a specific character in our strings, we can use the length of the strings as our key information piece.
+// We can store the length of each string, and then the string itself which will allow us to get up to the correct string.
+// We still need to use a delimiter as we won't know where the string itself starts.
+// Eg:
+// 1032Ab
+//
+// we can therfore convert the encoded string to
+// 1;03;2Ab
+//
+// The time complexity for this algorithm is O(m) where m is the number of strings in the array while the space complexity if we don't consider the output is O(1).
+//
+// The time complexity of decoding is O(n) where n is the number of characters in the encode string (which is proportional to the character count of all the input strings) and the space complexity O(1).
+//
+// > Length Encoded Optimized
+// We can further optimize the code above with a really interesting concept. String in JavaScript are immutable, meaning that every time we concatenate a string with another, we reallocate a new space in
+// memory where both strings will be copied to rendering the previous space as trash. You can easily see that in the code of the previous solution, we have a potential concatenation in every step of the way.
+// To improve the code, we'll keep track of a starting and ending index. When we need to work with the data, we'll extract it using any string slicing techique avaliable in the language.
+//
+// Another improvement we can do is identify the string that we'll decode once we see the delimeter. This will simplify the state of the decode function and make it more maintainable in the future.
+//
+// Notes:
+// - Attempt to think of and write the solution by hand (especially when we have state in a logic) before you write a single line of code.
+// - Think of potential edge cases and expand the resolution in a hypothetical scenario.
+
+class EncoderNaive {
+	private delimiter = ' ';
+
+	encode(strs: string[]): string {
+		let output = '';
+
+		for(let i = 0; i < strs.length; i++) {
+			output += strs[i] + this.delimiter;
+		}
+
+		return output;
+	}
+
+	decode(str: string): string[] {
+		let output: string[] = [];
+		let currStr = '';
+
+		for(let i = 0; i < str.length; i++) {
+			if(str[i] === this.delimiter) {
+				output.push(currStr);
+				currStr = '';
+				continue;
+			}
+
+			currStr += str[i];
+		}
+
+		return output;
+	}
+}
+
+class EnocderLengthEncoded {
+	private delimiter = ';';
+
+	encode(strs: string[]): string {
+		if(strs.length === 0) return '';
+		let output = '';
+		
+		for(let i = 0; i < strs.length; i++) {
+			output += strs[i].length + this.delimiter + strs[i];
+		}
+
+		return output;
+	}
+
+	decode(str: string): string[] {
+		let output: string[] = [];
+
+		let isCountReady = false;
+		let currString = '';
+		let strLength = '';
+		let currLength = 0;
+
+		let i = 0;
+		while(i <= str.length) {
+			if(!isCountReady && str[i] === this.delimiter) {
+				currLength = parseInt(strLength);
+
+				isCountReady = true;
+				strLength = '';
+				i++;
+				continue;
+			}
+
+			if(!isCountReady) {
+				strLength += str[i];
+				i++;
+				continue;
+			}
+
+			if(currLength > 0) currString += str[i];
+			currLength--;
+
+			if(currLength <= 0) {
+				output.push(currString);
+
+				isCountReady = false;
+				currString = '';
+			}
+
+			if(currLength >= 0) {
+				i++;
+			}
+		}
+
+		return output;
+	}
+}
+
+class EnocderLengthEncodedOptimized {
+	private delimiter = ';';
+
+	encode(strs: string[]): string {
+		if(strs.length === 0) return '';
+		let output = '';
+		
+		for(let i = 0; i < strs.length; i++) {
+			output += strs[i].length + this.delimiter + strs[i];
+		}
+
+		return output;
+	}
+
+	decode(str: string): string[] {
+		let output: string[] = [];
+
+		let currLength = 0;
+		let startPos = 0;
+		let endPos = 0;
+
+		let i = 0;
+		while(i <= str.length) {
+			if(str[i] === this.delimiter) {
+				currLength = parseInt(str.slice(startPos, endPos + 1));
+
+				startPos = endPos + 2;
+				endPos = startPos + currLength;
+
+				if(startPos === endPos) {
+					output.push('');
+				} else {
+					output.push(str.slice(startPos, endPos));
+				}
+
+				startPos = endPos;
+				endPos = startPos;
+				i = startPos;
+				continue;
+			}
+
+			endPos = i;
+			i++;
+		}
+
+		return output;
+	}
+}
