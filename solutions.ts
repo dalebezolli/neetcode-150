@@ -599,3 +599,99 @@ class EnocderLengthEncodedOptimized {
 		return output;
 	}
 }
+
+// 238. Product of Array Except Self
+// https://leetcode.com/problems/product-of-array-except-self/description/
+//
+// Q:
+// Return an array that is the product of all elements except the current index's element.
+//
+// Constraints:
+// O(n) without using division
+//
+// A:
+// > Naive
+// We can just loop through the array for every position we're in, we can loop again through the array to calculate the product.
+// The only thing we need to check for is if we're in the same position in both loops, if that's the case we just skip that number.
+//
+// As we're looping through each number for every position this gives us a time complexity of O(n^2) which should TLE
+// and a space complexity of O(1) if we disregard the resulting array.
+//
+// > Product Arrays
+// To figure out the product of all numbers in a given position, we just need to know the product of all previous numbers and all subsequent numbers.
+// Then by multiplying these two numbers we can find the product of that position.
+//
+// Consider the following example:
+//  1  2  3  4
+// the resulting output would be the following:
+// 24 12  8  6
+//
+// what happens if we calculate the product of the previous elements in the array? we get the following array:
+//  1  1  2  6
+//
+// what happens if we calculate the product of the next elements in the array? we get the following array:
+// 24 12  4  1
+//
+// This shows us that for every position we can know the product of all the previous elements, and the prodct of all subsequent elements which allows us to calculate the resulting array.
+//
+// We first calculate the prod of all leftward elements O(n), then we calculate rightward O(n) and finally we just multiply both arrays O(n) as all these operations are sequential we have a totaling
+// time complexity of O(n) and a space complexity of O(n) as well.
+//
+// > Memory Optimized Product Arrays
+// What if we hold our result for the left sum in the result array? This would result in us skipping the storage of left products.
+// Can we somehow skip the calculation for a right array?
+//
+// If we calculate the rightward product in a variable, we can easily emulate the same logic.
+
+function productExceptSelfNaive(nums: number[]): number[] {
+	let result = new Array(nums.length).fill(1);
+
+	for(let i = 0; i < nums.length; i++) {
+		for(let j = 0; j < nums.length; j++) {
+			if(i === j) continue;
+
+			result[i] *= nums[j];
+		}
+	}
+
+	return result;
+};
+
+function productExceptSelfProductArrays(nums: number[]): number[] {
+	let result = new Array(nums.length);
+	let leftProducts  = new Array(nums.length).fill(1);
+	let rightProducts = new Array(nums.length).fill(1);
+
+	for(let i = 1; i < nums.length; i++) {
+		leftProducts[i] = leftProducts[i - 1] * nums[i - 1];
+	}
+
+	for(let i = nums.length - 2; i >= 0; i--) {
+		rightProducts[i] = rightProducts[i + 1] * nums[i + 1];
+	}
+
+	for(let i = 0; i < nums.length; i++) {
+		result[i] = leftProducts[i] * rightProducts[i];
+	}
+
+	return result;
+}
+
+function productExceptSelfOptimizedProductArrays(nums: number[]): number[] {
+	let result = new Array(nums.length).fill(1);
+
+	for(let i = 1; i < nums.length; i++) {
+		result[i] = result[i - 1] * nums[i - 1];
+	}
+
+	//  1
+	//  1  2  3  4
+	//  1  1  2  6
+	let rightProduct = 1;
+	for(let i = nums.length - 1; i >= 0; i--) {
+		result[i] *= rightProduct;
+		rightProduct *= nums[i];
+	}
+
+	return result;
+}
