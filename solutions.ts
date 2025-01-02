@@ -695,3 +695,159 @@ function productExceptSelfOptimizedProductArrays(nums: number[]): number[] {
 
 	return result;
 }
+
+// 36. Valid Sudoku
+// https://leetcode.com/problems/valid-sudoku/description/
+//
+// Q:
+// Validate a sudoku board with the following rules:
+// - A row must contain only one instance of 1-9
+// - A column must contain only one instance of 1-9
+// - A 3x3 box must contain only one instance of 1-9
+//
+// A:
+// > Brute Force
+// Let's have all the checks split for simplicity.
+// Row validation will work in the following way:
+//	Once we're in a non-empty cell we'll loop throuh each item in that row and verify that there's no other row that's the same.
+//
+// Column validation will work in a similar way, but we'll loop through cells.
+//
+// To create box validation we'll need to identify when we're in a block.
+//
+// Practically we need to map each index to a number.
+// Let's begin by mapping a position to a box in the sudoku. This is the exact same like mapping a 2d array to a 1dimensional array's indices.
+// We first need to know how many boxes are in a row of sudoku, which can be easily identified by dividing the number of cells in a row with the cells of a single box.
+//
+// In a 9x9 sudoku we'll have 9/3 = 3 boxes in a row.
+//
+// With this we can use the size of a box to calculate each index's box with the following formula:
+// floor(x / 3) + floor(y / 3) * boxes in a row
+//
+// Now that we have this we just need to figure out a way to loop through the indices of a box. This is achieved again by mapping a boxes index and 1-9 to a position in the sudoku array.
+// Which is almost like mapping a 1d array to a 2d array, which can be done with the formula:
+// y: floor(i/3)
+// x: i%3
+//
+// But we also need to offset them by the boxes x and y which are given to us in a similar fashion
+// offsetY: floor(boxI/boxes in a row) * boxes in a row
+// offsetX: boxI%boxes in a row * boxes in a row
+//
+// Which means that in total we have the following formulas:
+// offsetY + y = floor(boxI/boxes in a row) * boxes in a row + floor(i/3)
+// offsetX + x = boxI%boxes in a row * boxes in a row + i%3
+//
+// Now that we have these we'll work in a similar fashion but for each box.
+//
+// Every time we go to an index we need to look at all the groups indices. This means that we have an n^2 runtime for every group and with m groups we have a m*n^2 runtime which means O(n^2).
+// (The group count "m" for a row and a column is 9 whereas for the boxes is 4 in a 9x9 sudoku thus it can be considered static and can further explain the O(n^2))
+// The space complexity though is O(1) as we're not allocating anything proportional to our input.
+//
+// > Sets
+// We can easily see that this solution is not that performant. While it has plenty of optimizations that we can do to it i'd consider the biggest one would come from the way the checks are being handled.
+// We can use a set to keep track of all the existing groups data, giving us an O(1) check for duplicates. This means that our algorithm is still O(n^2) but if you remember we had calculated in the
+// runtime a number m, which even though is considered insignificant in big-O notation, in this case it's very significant.
+//
+// Because of this change we can also more easily merge the 3 checks, making it so that we have only one big loop that traverses through the numbers. Which we'll then map to the appropriate groups.
+// The mappings will work as follows:
+// The correct row set will be retrieved using the Y coord and in the set we'll append the current element
+// The correct col set will be retrieved using the X coord and in the set we'll append the current element.
+// The correct box set will be retrieved using the 1d box mapping, meaning: floor(x / 3) + floor(y / 3) * boxes in a row
+
+function isValidSudokuBruteForce(board: string[][]): boolean {
+	const side = board.length;
+
+	let areRowsValid = true;
+	for(let y = 0; y < side; y++) {
+		for(let x = 0; x < side; x++) {
+			for(let xCheck = 0; xCheck < side; xCheck++) {
+				if(x === xCheck) continue;
+				if(board[y][x] === '.') continue;
+			
+				if(board[y][x] === board[y][xCheck]) areRowsValid = false;
+			}
+		}
+	}
+
+	if(!areRowsValid) return false;
+
+	let areColsValid = true;
+	for(let x = 0; x < side; x++) {
+		for(let y = 0; y < side; y++) {
+			for(let yCheck = 0; yCheck < side; yCheck++) {
+				if(y === yCheck) continue;
+				if(board[y][x] === '.') continue;
+
+				if(board[y][x] === board[yCheck][x]) areColsValid = false;
+			}
+		}
+	}
+
+	if(!areColsValid) return false;
+
+	let areBoxesValid = true;
+
+	const boxesInRow = side / 3;
+	const totalBoxes = boxesInRow*boxesInRow;
+	for(let iBox = 0; iBox < totalBoxes; iBox++) {
+		const offsetY = Math.floor(iBox/boxesInRow) * boxesInRow;
+		const offsetX = iBox%boxesInRow * boxesInRow;
+
+		for(let i = 0; i < side; i++) {
+			for(let iCheck = 0; iCheck < side; iCheck++) {
+				if(i === iCheck) continue;
+
+				const posY = offsetY + Math.floor(i/3);
+				const posX = offsetX + i%3;
+				if(board[posY][posX] === '.') continue;
+
+				const checkPosY = offsetY + Math.floor(iCheck/3);
+				const checkPosX = offsetX + iCheck%3;
+
+				if(board[posY][posX] === board[checkPosY][checkPosX]) areBoxesValid = false;
+			}
+		}
+	}
+
+	if(!areBoxesValid) return false;
+
+	return true;
+};
+
+function isValidSudokuSets(board: string[][]): boolean {
+	const BOX_SIZE = 3;
+
+	const size = board.length;
+	const boxesInRow = board.length / BOX_SIZE;
+	const boxes = boxesInRow * boxesInRow;
+
+	let rowChecks: Set<string>[] = new Array(size);
+	let colChecks: Set<string>[] = new Array(size);
+	let boxChecks: Set<string>[] = new Array(boxes);
+
+	const boxIndex = (x: number, y: number) => Math.floor(x / BOX_SIZE) + Math.floor(y / BOX_SIZE) * boxesInRow;
+
+	for(let i = 0; i < size; i++) {
+		rowChecks[i] = new Set();
+		colChecks[i] = new Set();
+	}
+
+	for(let i = 0; i < boxes; i++) {
+		boxChecks[i] = new Set();
+	}
+
+	for(let y = 0; y < size; y++) {
+		for(let x = 0; x < size; x++) {
+			if(board[y][x] === '.') continue;
+			if(rowChecks[y].has(board[y][x])) return false;
+			if(colChecks[x].has(board[y][x])) return false;
+			if(boxChecks[boxIndex(x, y)].has(board[y][x])) return false;
+
+			rowChecks[y].add(board[y][x]);
+			colChecks[x].add(board[y][x]);
+			boxChecks[boxIndex(x,y)].add(board[y][x]);
+		}
+	}
+
+	return true;
+}
