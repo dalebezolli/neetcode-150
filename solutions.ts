@@ -969,3 +969,94 @@ function longestConsecutiveMap(nums: number[]): number {
 
 	return maxConsecutive;
 }
+
+// 125. Valid Palindrome
+// https://leetcode.com/problems/valid-palindrome/description/
+//
+// Q:
+// Is the phrase a palindrome?
+// ignore all non-alphanumeric characters and ignore case
+//
+// A:
+// > Brute Force
+// We could literally create a string that's case insensitive and with only the alphanumeric characters, after that we'll
+// loop from both left and right and check every time if the characters are the same. If they aren't at any given point, we don't have a palindrome.
+//
+// To properly trim the array we'll need O(n) time and space while the check should happen in O(n) time.
+//
+// > NoManipulations
+// As string manipulations are time consuming, usually requiring internal memory to be allocated as they are immutable, we can try and skip them.
+// Before doing the check that we mentioned in the above solution, we're going to validate that BOTH pointers are looking at a valid character.
+//
+// This solution won't require any extra space O(1) and it will perform better overall, but the big-O notation won't improve.
+
+function isPalindromeBruteForce(s: string): boolean {
+	let compareString = '';
+	for(const char of s) {
+		if(!char.match(/[a-zA-Z0-9]/)) continue;
+		compareString += char.toLowerCase();
+	}
+
+	let left = 0;
+	let right = compareString.length - 1;
+	let isPalindrome = true;
+	
+	while(isPalindrome && left < right) {
+		if(compareString[left] !== compareString[right]) isPalindrome = false;
+		left++;
+		right--;
+	}
+
+	return isPalindrome;
+};
+
+function isPalindromeNoManipulations(s: string): boolean {
+	let left = 0;
+	let right = s.length - 1;
+	let isPalindrome = true;
+	
+	while(isPalindrome && left < right) {
+		while(!s[left].match(/[a-zA-Z0-9]/) && left < right) {
+			left++;
+		}
+
+		while(!s[right].match(/[a-zA-Z0-9]/) && left < right) {
+			right--;
+		}
+
+		if(s[left].toLowerCase() !== s[right].toLowerCase()) isPalindrome = false;
+		left++;
+		right--;
+	}
+
+	return isPalindrome;
+};
+
+function isPalindromeNoManipulationsNoRegex(s: string): boolean {
+	let left = 0;
+	let right = s.length - 1;
+	let isPalindrome = true;
+	
+	while(isPalindrome && left < right) {
+		while(!isAlnum(s[left]) && left < right) {
+			left++;
+		}
+
+		while(!isAlnum(s[right]) && left < right) {
+			right--;
+		}
+
+		if(s[left].toLowerCase() !== s[right].toLowerCase()) isPalindrome = false;
+		left++;
+		right--;
+	}
+
+	return isPalindrome;
+
+	function isAlnum(char: string) {
+		let lowerChar = char.toLowerCase();
+
+		if(lowerChar >= 'a' && lowerChar <= 'z' || lowerChar >= '0' && lowerChar <= '9') return true;
+		return false;
+	}
+};
