@@ -851,3 +851,121 @@ function isValidSudokuSets(board: string[][]): boolean {
 
 	return true;
 }
+
+// 128. Longest Consecutive Sequence
+// https://leetcode.com/problems/longest-consecutive-sequence/description/
+//
+// Q:
+// Given an unsorted array of nums, return the length of the longest consecutive sequence as if they were sorted.
+//
+// Constraints:
+// nums.length: [0, 10^5]
+// nums[i]: [0, 10^9]
+// Must run in O(n)
+//
+// A:
+// > Brute Force
+// What if we could sort the array? If so what would the logic be to find the longest consecutive sequence?
+// After sorting, which would take O(nlogn) we could just loop through the array and keep track of the length of the current sequence.
+//
+// Unfortunately we cannot efficiently use Radix Sort here as it would worsen the performance of the algoritm, but if we feel like it it's technically possible.
+//
+// If a sequence breaks we won't reuse it as it will never connect with another, which means there's no reason to go back to previous indices.
+//
+// The time complexity is O(n) for this logic but with the sorting we conclude with an O(nlogn) time complexity for the algorithm.
+// The space complexity is O(1)
+//
+// > Sets
+// An interesting idea that we can follow has to do with the way a sequence is structured. All sequences must have a start and an end, which could very well be the same number
+// but that's irrelevant. What's interesting from this is that we can, based on a number know what should be the exact previous and next number. This means that if we
+// bump into a number eg 4 we know that the next one should always be 5. We just need a way to know if the next and previous number exist in our data.
+// To do so we can use a set to store our numbers. Then we can just look if the next numbers exist, and keep following that trail until we hit a wall.
+//
+// There's no practical reason to look at both directions as the preformance won't improve. Worst case we could see us looping through our data in a similar fashion as bubble sort,
+// which would result in a worst case time complexity O(n^2).
+// The space complexity increases now to O(n) because of the set.
+//
+// > Maps
+// What if we could keep track of where we've been though? This means we are going to use a map which we'll look at both directions in.
+// If we find our sequence stops in both directions and while we're following the sequence update the map correctly to keep track of what we've seen. We'll ALWAYS go through each number
+// at most once, making it an O(n) time complexity.
+
+function longestConsecutiveBruteForce(nums: number[]): number {
+	if(nums.length === 0) return 0;
+
+	let maxLength = 1;
+	nums.sort((a, b) => a - b);
+
+	let currentLength = 1;
+	let prevIncreasingIndex = 0;
+	for(let i = 1; i <= nums.length; i++) {
+		if(i !== nums.length && nums[i] - nums[prevIncreasingIndex] === 0) continue;
+
+		if(i === nums.length || nums[i] - nums[prevIncreasingIndex] !== 1) {
+			maxLength = Math.max(maxLength, currentLength);
+			currentLength = 1;
+			prevIncreasingIndex = i;
+			continue;
+		}
+
+		currentLength++;
+		prevIncreasingIndex = i;
+	}
+
+	return maxLength;
+};
+
+function longestConsecutiveSet(nums: number[]): number {
+	let setNums = new Set<number>();
+
+	for(const num of nums) {
+		setNums.add(num);
+	}
+
+	let maxConsecutive = 0;
+	for(const num of nums) {
+		let currConsecutive = 1;
+		let trailNum = num;
+		while(setNums.has(trailNum - 1)) {
+			trailNum--;
+			currConsecutive++;
+		}
+
+		maxConsecutive = Math.max(maxConsecutive, currConsecutive);
+	}
+
+	return maxConsecutive;
+}
+
+function longestConsecutiveMap(nums: number[]): number {
+	let visitedNums = new Map<number, boolean>();
+
+	for(const num of nums) {
+		visitedNums.set(num, false);
+	}
+
+	let maxConsecutive = 0;
+	for(const num of nums) {
+		if(visitedNums.get(num) === true) continue;
+		visitedNums.set(num, true);
+		
+		let currConsecutive = 1;
+		let trailNum = num;
+		while(visitedNums.has(trailNum - 1)) {
+			visitedNums.set(trailNum - 1, true);
+			trailNum--;
+			currConsecutive++;
+		}
+
+		trailNum = num;
+		while(visitedNums.has(trailNum + 1)) {
+			visitedNums.set(trailNum + 1, true);
+			trailNum++;
+			currConsecutive++;
+		}
+
+		maxConsecutive = Math.max(maxConsecutive, currConsecutive);
+	}
+
+	return maxConsecutive;
+}
